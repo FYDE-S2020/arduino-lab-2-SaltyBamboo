@@ -39,24 +39,82 @@
 
 // You should get Auth Token in the Blynk App.
 // Go to the Project Settings (nut icon).
-char auth[] = "Your token here";
+
+char auth[] = "osAEBhzUq3HIteqfyXEemA3m-5aRujtL";
 
 // Your WiFi credentials.
 // Set password to "" for open networks.
 // The EE IOT network is hidden. You might not be able to see it.
 // But you should be able to connect with these credentials. 
-char ssid[32] = "EE-IOT-Platform-02";
-char pass[32] = "g!TyA>hR2JTy";
+
+char ssid[32] = "iPhone 9";
+char pass[32] = "alvin123";
+
+#define LED 2
+
+BlynkTimer timer;
+int time_count = 0;
+String content = "";
+
+const int freq = 5000;
+const int ledChannel = 0;
+const int resolution = 10;
+
+int LED_State = 0;
 
 void setup()
 {
-  // Serial Monitor
   Serial.begin(115200);
   Blynk.begin(auth, ssid, pass);
+  pinMode(LED, OUTPUT);
+  ledcSetup(ledChannel, freq, resolution);
+  ledcAttachPin(LED, ledChannel);
+  timer.setInterval(1000L, myTimerEvent);
+}
+
+BLYNK_WRITE(2)
+{
+  if(LED_State){
+    int val = param.asInt();
+    ledcWrite(ledChannel, val);
+  }
+}
+
+BLYNK_WRITE(V1)
+{
+    int pinValue = param.asInt();
+
+    if (pinValue == 0) {
+        LED_State = 0;
+        ledcWrite(ledChannel, pinValue);  
+    }
+    else {
+        LED_State = 1;  
+    }
+}
+
+void myTimerEvent()
+{
+    Blynk.virtualWrite(V0, millis() / 1000);
+    if (time_count == 100){
+        time_count = 0;
+    }
+    else {
+        char character;
+        while(Serial.available()) {
+            character = Serial.read();
+            content.concat(character);
+        }
+        if (content != "") {
+            Blynk.virtualWrite(V3, content);
+            content = "";
+        }  
+    }
+    time_count += 1;
 }
 
 void loop()
 {
   Blynk.run();
+  timer.run();
 }
-
